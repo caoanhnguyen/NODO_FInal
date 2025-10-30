@@ -1,4 +1,4 @@
-package com.example.nodo_final.dto;
+package com.example.nodo_final.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;

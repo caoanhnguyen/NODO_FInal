@@ -1,4 +1,4 @@
-package com.example.nodo_final.dto;
+package com.example.nodo_final.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;

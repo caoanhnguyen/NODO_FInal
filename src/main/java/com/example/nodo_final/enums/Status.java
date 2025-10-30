@@ -1,4 +1,10 @@
 package com.example.nodo_final.enums;
 
-public class Status {
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public enum Status {
+    @JsonProperty("0")
+    DELETE,
+    @JsonProperty("1")
+    ACTIVE
 }
