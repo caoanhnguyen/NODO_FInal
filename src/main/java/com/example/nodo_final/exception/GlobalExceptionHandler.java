@@ -207,18 +207,17 @@ public class GlobalExceptionHandler {
                 .build();
     }
 
-//    @ExceptionHandler(SemanticException.class)
-//    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-//    public ErrorResponse handleSemanticException(SemanticException ex, WebRequest request) {
-//
-//        return ErrorResponse.builder()
-//                .timestamp(new Date())
-//                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-//                .path(request.getDescription(false).replace("uri=", ""))
-//                .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-//                .message("Lỗi máy chủ khi xử lý dữ liệu.")
-//                .build();
-//    }
+    @ExceptionHandler(StorageException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleStorageException(StorageException ex, WebRequest request) {
+        return ErrorResponse.builder()
+                .timestamp(new Date())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
+                .message(ex.getMessage())
+                .build();
+    }
 
     // Xử lý tất cả các ngoại lệ khác
     @ExceptionHandler(Exception.class)

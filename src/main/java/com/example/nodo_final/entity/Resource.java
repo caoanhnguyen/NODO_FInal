@@ -8,6 +8,7 @@ import lombok.experimental.FieldDefaults;
 @Table(name = "resources")
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)

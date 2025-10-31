@@ -1,37 +1,56 @@
 package com.example.nodo_final.controller;
 
+import com.example.nodo_final.dto.request.CategoryRequestDTO;
 import com.example.nodo_final.dto.response.ResponseData;
+import com.example.nodo_final.entity.Resource;
+import com.example.nodo_final.repository.ResourceRepository;
 import com.example.nodo_final.service.CategoryService;
+import com.example.nodo_final.service.FileStorageService;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+import java.util.Locale;
+
+@AllArgsConstructor
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {
 
     private final CategoryService categoryService;
+    private final FileStorageService fileStorageService;
+    private final ResourceRepository resourceRepository;
+    private final MessageSource messageSource;
 
-    public CategoryController(CategoryService categoryService) {
-        this.categoryService = categoryService;
-    }
+    @PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseData<?> createCategory(@Valid @ModelAttribute CategoryRequestDTO categoryRequestDTO,
+                                          @RequestParam(value = "files") List<MultipartFile> files, Locale locale) {
 
-    @PostMapping("")
-    public ResponseData<?> createCategory(@RequestBody String categoryName) {
-        return ResponseData.builder()
-                .status(HttpStatus.CREATED.value())
-                .message("Category created successfully")
-                .data(null)
-                .build();
+        return categoryService.createCategory(categoryRequestDTO, files, locale);
     }
 
 
     @DeleteMapping("/{id}")
-    public ResponseData<?> softDelete(@PathVariable Long id) {
-        categoryService.softDelete(id);
+    public ResponseData<?> softDelete(@PathVariable Long id, Locale locale) {
+        return categoryService.softDelete(id, locale);
+    }
+
+    @PostMapping("/uploadImgTest")
+    @Transactional
+    public ResponseData<?> uploadImgTest(@ModelAttribute MultipartFile files) {
+        Resource resource = fileStorageService.save(files);
+        resourceRepository.save(resource);
         return ResponseData.builder()
                 .status(HttpStatus.OK.value())
-                .message("Category soft deleted successfully")
+                .message("Image uploaded successfully")
                 .data(null)
                 .build();
     }
+
 }
