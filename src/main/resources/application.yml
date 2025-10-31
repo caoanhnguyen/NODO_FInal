@@ -1,5 +1,10 @@
 server:
   port: 8088
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 spring:
   application:
@@ -19,6 +24,7 @@ spring:
       enabled: true
       max-file-size: 1GB
       max-request-size: 1GB
+
 
   jpa:
     open-in-view: false
@@ -43,7 +49,3 @@ logging:
         orm:
           jpa:
             JpaTransactionManager: TRACE
-
-file:
-  upload-dir: ./uploads
-  access-url-prefix: api/files/**
