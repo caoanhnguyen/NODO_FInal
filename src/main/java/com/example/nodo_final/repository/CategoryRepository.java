@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface CategoryRepository extends JpaRepository<Category, Long> {
     Optional<Category> findByIdAndStatus(Long id, Status status);
 
+    Optional<Category> findByCategoryCode(String categoryCode);
+
     boolean existsByCategoryCode(String categoryCode);
 
 }

@@ -16,6 +16,4 @@ public class CategoryResponseDTO {
     String name;
     @JsonProperty("category_code")
     String categoryCode;
-    String description;
-    List<String> images;
 }

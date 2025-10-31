@@ -36,6 +36,16 @@ public class CategoryController {
     }
 
 
+    @PutMapping("/{id}")
+    public ResponseData<?> updateCategory(@PathVariable Long id,
+                                          @Valid @ModelAttribute CategoryRequestDTO categoryRequestDTO,
+                                          @RequestParam(value = "files", required = false) List<MultipartFile> files,
+                                          @RequestParam(value = "deleteIds", required = false) List<Long> deleteIds,
+                                          Locale locale) {
+        return categoryService.updateCategory(id, categoryRequestDTO, files, deleteIds, locale);
+    }
+
+
     @DeleteMapping("/{id}")
     public ResponseData<?> softDelete(@PathVariable Long id, Locale locale) {
         return categoryService.softDelete(id, locale);

@@ -11,5 +11,7 @@ public interface CategoryService {
 
     ResponseData<?> createCategory(CategoryRequestDTO dto, List<MultipartFile> files, Locale locale);
 
+    ResponseData<?> updateCategory(Long id, CategoryRequestDTO dto, List<MultipartFile> files, List<Long> deleteIds, Locale locale);
+
     ResponseData<?> softDelete(Long id, Locale locale);
 }
