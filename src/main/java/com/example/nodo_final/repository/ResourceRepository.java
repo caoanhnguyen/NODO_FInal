@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public interface ResourceRepository extends JpaRepository<Resource, Long> {
@@ -26,5 +28,7 @@ public interface ResourceRepository extends JpaRepository<Resource, Long> {
             @Param("status") Status status
     );
 
-    List<Resource> findByProductAndStatus(Product product, Status status); //
+    List<Resource> findByProductAndStatus(Product product, Status status);
+
+    List<Resource> findByCategory_IdInAndStatus(Collection<Long> categoryIds, Status status);
 }

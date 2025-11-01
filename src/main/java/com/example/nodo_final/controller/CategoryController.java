@@ -1,6 +1,7 @@
 package com.example.nodo_final.controller;
 
 import com.example.nodo_final.dto.request.CategoryRequestDTO;
+import com.example.nodo_final.dto.request.CategorySearchReqDTO;
 import com.example.nodo_final.dto.response.ResponseData;
 import com.example.nodo_final.entity.Resource;
 import com.example.nodo_final.repository.ResourceRepository;
@@ -9,6 +10,9 @@ import com.example.nodo_final.service.FileStorageService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.context.MessageSource;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +39,20 @@ public class CategoryController {
         return categoryService.createCategory(categoryRequestDTO, files, locale);
     }
 
+
+    @GetMapping("/search")
+    public ResponseData<?> getAllCategories(
+            @Valid @ModelAttribute CategorySearchReqDTO request,
+            @RequestParam(value = "page", defaultValue = "0", required = false) int page,
+            @RequestParam(value = "size", defaultValue = "10", required = false) int size,
+            Locale locale) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseData.builder()
+                .status(HttpStatus.OK.value())
+                .message("Categories retrieved successfully")
+                .data(categoryService.getAllCategories(request, pageable, locale))
+                .build();
+    }
 
     @PutMapping("/{id}")
     public ResponseData<?> updateCategory(@PathVariable Long id,
