@@ -10,15 +10,19 @@ import com.example.nodo_final.service.FileStorageService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.context.MessageSource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Locale;
 
@@ -79,6 +83,28 @@ public class CategoryController {
                 .message("Image uploaded successfully")
                 .data(null)
                 .build();
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<?> exportCategories(
+            @Valid @ModelAttribute CategorySearchReqDTO request //
+    ) {
+        String filename = "categories.xlsx";
+
+        // 1. Gọi Service
+        ByteArrayInputStream fileData = categoryService.exportCategories(request);
+        InputStreamResource file = new InputStreamResource(fileData);
+
+        // 2. Set Headers
+        HttpHeaders headers = new HttpHeaders();
+        // Báo cho trình duyệt biết đây là file .xlsx
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        // Báo cho trình duyệt TẢI VỀ với tên file
+        headers.setContentDispositionFormData("attachment", filename);
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(file);
     }
 
 }

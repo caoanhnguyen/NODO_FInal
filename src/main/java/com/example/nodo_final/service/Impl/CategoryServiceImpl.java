@@ -13,6 +13,7 @@ import com.example.nodo_final.repository.CategoryRepository;
 import com.example.nodo_final.repository.ResourceRepository;
 import com.example.nodo_final.service.CategoryService;
 import com.example.nodo_final.service.FileStorageService;
+import com.example.nodo_final.utils.ExcelHelper;
 import lombok.AllArgsConstructor;
 import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -201,5 +203,18 @@ public class CategoryServiceImpl implements CategoryService {
                 .message(messageSource.getMessage("category.delete.success", null, locale))
                 .data(null)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ByteArrayInputStream exportCategories(CategorySearchReqDTO request) {
+
+        // 1. Gọi hàm repo mới (lấy TẤT CẢ, không phân trang)
+        List<Object[]> categoriesData = categoryRepository.searchCategoriesForExport(request);
+
+        // 2. Gọi Util để tạo file
+        ByteArrayInputStream in = ExcelHelper.categoriesToExcel(categoriesData);
+
+        return in;
     }
 }
