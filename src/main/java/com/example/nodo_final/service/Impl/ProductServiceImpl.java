@@ -1,7 +1,9 @@
 package com.example.nodo_final.service.Impl;
 
 import com.example.nodo_final.dto.request.ProductRequestDTO;
+import com.example.nodo_final.dto.request.ProductSearchReqDTO;
 import com.example.nodo_final.dto.request.UpdateProductReqDTO;
+import com.example.nodo_final.dto.response.PageResponse;
 import com.example.nodo_final.dto.response.ProductResponseDTO;
 import com.example.nodo_final.dto.response.ResponseData;
 import com.example.nodo_final.entity.Category;
@@ -11,6 +13,7 @@ import com.example.nodo_final.entity.Resource;
 import com.example.nodo_final.enums.Status;
 import com.example.nodo_final.exception.ResourceNotFoundException;
 import com.example.nodo_final.mapper.ProductMapper;
+import com.example.nodo_final.mapper.ResourceMapper;
 import com.example.nodo_final.repository.CategoryRepository;
 import com.example.nodo_final.repository.ProductCategoryRepository;
 import com.example.nodo_final.repository.ProductRepository;
@@ -19,6 +22,8 @@ import com.example.nodo_final.service.FileStorageService;
 import com.example.nodo_final.service.ProductService;
 import lombok.AllArgsConstructor;
 import org.springframework.context.MessageSource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,6 +42,7 @@ public class ProductServiceImpl implements ProductService {
     private final ResourceRepository resourceRepository;
     private final FileStorageService fileStorageService;
     private final ProductCategoryRepository productCategoryRepository;
+    private final ResourceMapper resourceMapper;
 
 
 
@@ -145,6 +151,89 @@ public class ProductServiceImpl implements ProductService {
         product.setStatus(Status.DELETE);
     }
 
+    @Override
+    public PageResponse<?> getAllProducts(ProductSearchReqDTO request, Pageable pageable, Locale locale) {
+        // 1. (QUERY 1) Lấy trang (Page) Object[] TỪ HÀM CUSTOM
+        Page<Object[]> productPage = productRepository.searchProducts(request, pageable);
+        List<Object[]> results = productPage.getContent();
+
+        if (results.isEmpty()) {
+            return PageResponse.builder()
+                    .currentPage(productPage.getNumber())
+                    .pageSize(productPage.getSize())
+                    .totalElements(productPage.getTotalElements())
+                    .totalPages(productPage.getTotalPages())
+                    .hasNext(productPage.hasNext())
+                    .hasPrevious(productPage.hasPrevious())
+                    .build();
+        }
+
+        // 2. (IN-MEMORY) Map thủ công Object[] -> DTO
+        List<ProductResponseDTO> responseDtos = new ArrayList<>();
+        for (Object[] row : results) {
+            ProductResponseDTO dto = new ProductResponseDTO();
+            dto.setId((Long) row[0]);
+            dto.setName((String) row[1]);
+            dto.setProductCode((String) row[2]);
+            dto.setPrice((Double) row[3]);
+            dto.setQuantity((Long) row[4]);
+            dto.setCreatedDate((Date) row[5]);
+            dto.setModifiedDate((Date) row[6]);
+            responseDtos.add(dto);
+        }
+
+        // 3. CHUẨN BỊ CHỐNG N+1
+        Set<Long> productIds = responseDtos.stream()
+                .map(ProductResponseDTO::getId)
+                .collect(Collectors.toSet());
+
+        // 4. (QUERY 2 - "Query Lẻ") Lấy TẤT CẢ Categories [cite: 157, 168]
+        List<ProductCategory> allLinks = productCategoryRepository
+                .findActiveLinksByProductIds(productIds, Status.ACTIVE);
+
+        // 5. (QUERY 3 - "Query Lẻ") Lấy TẤT CẢ Ảnh [cite: 158, 169]
+        List<Resource> allImages = resourceRepository
+                .findByProduct_IdInAndStatus(productIds, Status.ACTIVE);
+
+        // 6. (IN-MEMORY) Grouping
+        Map<Long, List<Category>> categoryMap = allLinks.stream()
+                .collect(Collectors.groupingBy(
+                        pc -> pc.getProduct().getId(),
+                        Collectors.mapping(ProductCategory::getCategory, Collectors.toList())
+                ));
+
+        Map<Long, List<Resource>> imageMap = allImages.stream()
+                .collect(Collectors.groupingBy(img -> img.getProduct().getId()));
+
+        // 7. (IN-MEMORY) "May vá" (Stitch) dữ liệu vào DTO
+        for (ProductResponseDTO dto : responseDtos) {
+            Long currentId = dto.getId();
+
+            // a. Map Categories -> String
+            List<Category> cats = categoryMap.getOrDefault(currentId, Collections.emptyList());
+            String catString = cats.stream().map(Category::getName).collect(Collectors.joining(", "));
+            dto.setCategories(catString);
+
+            // b. Map Images -> List<ResourceResponseDTO>
+            List<Resource> imgs = imageMap.getOrDefault(currentId, Collections.emptyList());
+            dto.setImages(
+                    imgs.stream()
+                            .map(resourceMapper::toResponseDto)
+                            .toList()
+            );
+        }
+
+        // 8. Xây dựng Pagination metadata [cite: 172-179]
+        return PageResponse.builder()
+                .data(responseDtos)
+                .currentPage(productPage.getNumber())
+                .pageSize(productPage.getSize())
+                .totalElements(productPage.getTotalElements())
+                .totalPages(productPage.getTotalPages())
+                .hasNext(productPage.hasNext())
+                .hasPrevious(productPage.hasPrevious())
+                .build();
+    }
 
     // Kiểm tra product_code có bị trùng không
     private boolean validateProductCode(String productCode, Long id) {

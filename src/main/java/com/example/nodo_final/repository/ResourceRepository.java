@@ -31,4 +31,6 @@ public interface ResourceRepository extends JpaRepository<Resource, Long> {
     List<Resource> findByProductAndStatus(Product product, Status status);
 
     List<Resource> findByCategory_IdInAndStatus(Collection<Long> categoryIds, Status status);
+
+    List<Resource> findByProduct_IdInAndStatus(Collection<Long> productIds, Status status);
 }
