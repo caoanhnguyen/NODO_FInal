@@ -65,6 +65,37 @@ public class CategoryRepositoryCustomImpl implements CategoryRepositoryCustom {
     }
 
     @Override
+    public Page<Object[]> searchCategoriesForExportPaging(CategorySearchReqDTO request, Pageable pageable) {
+
+        // 1. SELECT: Lấy 8 cột theo yêu cầu
+        String selectClause = "SELECT c.id, c.name, c.categoryCode, c.description, c.createdDate, c.modifiedDate, c.createdBy, c.modifiedBy ";
+
+        String fromClause = "FROM Category c ";
+        StringBuilder whereClause = new StringBuilder("WHERE c.status = :status ");
+
+        // 2. Tái sử dụng logic WHERE
+        Map<String, Object> parameters = buildWhereClause(request, whereClause);
+
+        // --- QUERY 1: Lấy DỮ LIỆU (Object[]) ---
+        String jpql = selectClause + fromClause + whereClause.toString();
+        Query query = em.createQuery(jpql);
+        query.setFirstResult((int) pageable.getOffset());
+        query.setMaxResults(pageable.getPageSize());
+        parameters.forEach(query::setParameter);
+
+        List<Object[]> results = query.getResultList();
+
+        // --- QUERY 2: Lấy COUNT (cho phân trang) ---
+        String countJpql = "SELECT COUNT(c) " + fromClause + whereClause.toString();
+        Query countQuery = em.createQuery(countJpql);
+        parameters.forEach(countQuery::setParameter);
+
+        Long totalElements = (Long) countQuery.getSingleResult();
+
+        return new PageImpl<>(results, pageable, totalElements);
+    }
+
+    @Override
     public Page<Object[]> searchCategories(CategorySearchReqDTO request, Pageable pageable) {
 
         // Select các cột theo yêu cầu

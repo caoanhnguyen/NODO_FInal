@@ -13,17 +13,20 @@ import com.example.nodo_final.repository.CategoryRepository;
 import com.example.nodo_final.repository.ResourceRepository;
 import com.example.nodo_final.service.CategoryService;
 import com.example.nodo_final.service.FileStorageService;
-import com.example.nodo_final.utils.ExcelHelper;
 import lombok.AllArgsConstructor;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -207,14 +210,80 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
-    public ByteArrayInputStream exportCategories(CategorySearchReqDTO request) {
+    public StreamingResponseBody exportCategories(CategorySearchReqDTO request) {
 
-        // 1. Gọi hàm repo mới (lấy TẤT CẢ, không phân trang)
-        List<Object[]> categoriesData = categoryRepository.searchCategoriesForExport(request);
+        // 1. Trả về "ống nước"
+        return outputStream -> {
 
-        // 2. Gọi Util để tạo file
-        ByteArrayInputStream in = ExcelHelper.categoriesToExcel(categoriesData);
+            // 2. Dùng SXSSF (Streaming)
+            try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
 
-        return in;
+                Sheet sheet = workbook.createSheet("Categories");
+
+                // 3. (Tạo Header Row)
+                String[] HEADERS = { "ID", "Tên", "Mã", "Mô tả", "Ngày tạo", "Ngày sửa", "Người tạo", "Người sửa" };
+                Row headerRow = sheet.createRow(0);
+                for (int col = 0; col < HEADERS.length; col++) {
+                    headerRow.createCell(col).setCellValue(HEADERS[col]);
+                }
+
+                // 4. (Tạo Date Style)
+                CellStyle dateCellStyle = workbook.createCellStyle();
+                DataFormat dataFormat = workbook.createDataFormat();
+                dateCellStyle.setDataFormat(dataFormat.getFormat("dd/MM/yyyy HH:mm:ss"));
+
+                // 5. BẮT ĐẦU VÒNG LẶP (Logic 1000 bản ghi 1 lần)
+                int page = 0;
+                final int BATCH_SIZE = 1000;
+                int currentRowIndex = 1;
+
+                while (true) {
+                    Pageable pageable = PageRequest.of(page, BATCH_SIZE);
+
+                    // 6. (QUERY 1 - Lô 1k) Lấy 1000 Category (8 cột)
+                    Page<Object[]> categoryPage = categoryRepository
+                            .searchCategoriesForExportPaging(request, pageable); //
+
+                    List<Object[]> categories = categoryPage.getContent();
+
+                    if (categories.isEmpty()) {
+                        break; // Hết dữ liệu -> Dừng lặp
+                    }
+
+                    // 7. (IN-MEMORY) Ghi 1000 dòng này vào Sheet
+                    // (Category không cần "query lẻ" N+1, nên dễ hơn Product)
+                    for (Object[] rowData : categories) {
+                        Row row = sheet.createRow(currentRowIndex++);
+
+                        // Loop qua 8 cột
+                        for (int i = 0; i < HEADERS.length; i++) {
+                            Cell cell = row.createCell(i);
+                            Object value = rowData[i];
+
+                            if (value instanceof Date) {
+                                cell.setCellValue((Date) value);
+                                cell.setCellStyle(dateCellStyle);
+                            } else if (value != null) {
+                                cell.setCellValue(value.toString());
+                            } else {
+                                cell.setCellValue("");
+                            }
+                        }
+                    }
+
+                    page++; // Sang trang tiếp theo
+                }
+
+                // 8. Ghi Workbook (file tạm) ra "ống nước"
+                workbook.write(outputStream);
+
+                // 9. Dọn dẹp
+                workbook.close();
+                workbook.dispose(); // Xóa file tạm
+
+            } catch (IOException e) {
+                throw new RuntimeException("Lỗi streaming file Excel", e);
+            }
+        };
     }
 }

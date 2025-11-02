@@ -6,6 +6,7 @@ import com.example.nodo_final.dto.response.PageResponse;
 import com.example.nodo_final.dto.response.ResponseData;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -21,5 +22,5 @@ public interface CategoryService {
 
     ResponseData<?> softDelete(Long id, Locale locale);
 
-    ByteArrayInputStream exportCategories(CategorySearchReqDTO request);
+    StreamingResponseBody exportCategories(CategorySearchReqDTO request);
 }

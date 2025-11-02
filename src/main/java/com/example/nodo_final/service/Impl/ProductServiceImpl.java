@@ -21,13 +21,18 @@ import com.example.nodo_final.repository.ResourceRepository;
 import com.example.nodo_final.service.FileStorageService;
 import com.example.nodo_final.service.ProductService;
 import lombok.AllArgsConstructor;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -233,6 +238,96 @@ public class ProductServiceImpl implements ProductService {
                 .hasNext(productPage.hasNext())
                 .hasPrevious(productPage.hasPrevious())
                 .build();
+    }
+
+    @Override
+    public StreamingResponseBody exportProducts(ProductSearchReqDTO request) {
+        // 3. Trả về một "dòng chảy"
+        return outputStream -> { // outputStream là "ống nước" nối thẳng ra client
+
+            // 4. Dùng SXSSF (Streaming)
+            // (100) nghĩa là giữ 100 dòng trong RAM, thừa thì xả ra file tạm
+            try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
+
+                Sheet sheet = workbook.createSheet("Products");
+
+                // (Tạo Header Row - y như ExcelHelper)
+                String[] HEADERS = { "ID", "Tên", "Mã", "Giá", "Số lượng", "Ngày tạo", "Ngày sửa", "Danh mục" };
+                Row headerRow = sheet.createRow(0);
+                for (int col = 0; col < HEADERS.length; col++) {
+                    headerRow.createCell(col).setCellValue(HEADERS[col]);
+                }
+
+                // (Tạo Date Style - y như ExcelHelper)
+                CellStyle dateCellStyle = workbook.createCellStyle();
+                DataFormat dataFormat = workbook.createDataFormat();
+                dateCellStyle.setDataFormat(dataFormat.getFormat("dd/MM/yyyy HH:mm:ss"));
+
+                // 5. BẮT ĐẦU VÒNG LẶP (Logic 1000 bản ghi 1 lần)
+                int page = 0;
+                final int BATCH_SIZE = 1000; // 1k bản ghi
+                int currentRowIndex = 1; // Bắt đầu ghi data từ hàng 1
+
+                while (true) {
+                    Pageable pageable = PageRequest.of(page, BATCH_SIZE);
+
+                    // 6. (QUERY 1 - Lô 1k) Lấy 1000 Product
+                    Page<Object[]> productPage = productRepository.searchProducts(request, pageable);
+                    List<Object[]> products = productPage.getContent();
+
+                    if (products.isEmpty()) {
+                        break; // Hết dữ liệu -> Dừng lặp
+                    }
+
+                    // 7. (QUERY 2 - Lô 1k) Lấy Categories (Chống N+1)
+                    Set<Long> productIds = products.stream().map(r -> (Long) r[0]).collect(Collectors.toSet());
+                    List<ProductCategory> allLinks = productCategoryRepository
+                            .findActiveLinksByProductIds(productIds, Status.ACTIVE);
+
+                    // 8. (IN-MEMORY) "May vá" Categories (cho 1k bản ghi)
+                    Map<Long, String> categoryMap = allLinks.stream()
+                            .collect(Collectors.groupingBy(
+                                    pc -> pc.getProduct().getId(),
+                                    Collectors.mapping(pc -> pc.getCategory().getName(), Collectors.joining(", "))
+                            ));
+
+                    // 9. (IN-MEMORY) Ghi 1000 dòng này vào Sheet
+                    for (Object[] productRow : products) {
+                        Row row = sheet.createRow(currentRowIndex++);
+                        Long currentId = (Long) productRow[0];
+                        String categories = categoryMap.getOrDefault(currentId, "");
+
+                        // (Copy 7 cột)
+                        for (int i = 0; i < productRow.length; i++) {
+                            Cell cell = row.createCell(i);
+                            Object value = productRow[i];
+                            // (If...else check kiểu Long, String, Double... y hệt ExcelHelper)
+                            if (value instanceof Date) {
+                                cell.setCellValue((Date) value);
+                                cell.setCellStyle(dateCellStyle);
+                            } else if (value != null) {
+                                cell.setCellValue(value.toString());
+                            }
+                        }
+                        // (Thêm cột 8 - Category)
+                        row.createCell(HEADERS.length - 1).setCellValue(categories);
+                    }
+
+                    page++; // Sang trang tiếp theo (lô 1k tiếp theo)
+                }
+
+                // 10. Ghi Workbook (chứa file tạm) ra "ống nước"
+                workbook.write(outputStream);
+
+                // 11. Dọn dẹp
+                workbook.close();
+                workbook.dispose(); // CỰC KỲ QUAN TRỌNG: Xóa file tạm trên ổ đĩa
+
+            } catch (IOException e) {
+                // Xử lý lỗi
+                throw new RuntimeException("Lỗi streaming file Excel", e);
+            }
+        };
     }
 
     // Kiểm tra product_code có bị trùng không

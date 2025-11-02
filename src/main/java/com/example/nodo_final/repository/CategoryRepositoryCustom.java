@@ -11,4 +11,6 @@ public interface CategoryRepositoryCustom {
     Page<Object[]> searchCategories(CategorySearchReqDTO searchReqDTO, Pageable pageable);
 
     List<Object[]> searchCategoriesForExport(CategorySearchReqDTO searchReqDTO);
+
+    Page<Object[]> searchCategoriesForExportPaging(CategorySearchReqDTO request, Pageable pageable);
 }

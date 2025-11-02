@@ -20,25 +20,17 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
     @PersistenceContext
     private EntityManager em;
 
-    @Override
-    public Page<Object[]> searchProducts(ProductSearchReqDTO request, Pageable pageable) {
+    private Map<String, Object> buildWhereClause(ProductSearchReqDTO request,
+                                                 StringBuilder fromClause, //
+                                                 StringBuilder whereClause) {
 
-        // 1. SELECT: 7 cột (id, name, code, price, quantity, createdDate, modifiedDate)
-        String selectClause = "SELECT DISTINCT p.id, p.name, p.productCode, p.price, p.quantity, p.createdDate, p.modifiedDate ";
-
-        // 2. FROM: Chuẩn bị JOIN động
-        String fromClause = "FROM Product p ";
-
-        // 3. WHERE: Xây dựng động
-        StringBuilder whereClause = new StringBuilder("WHERE p.status = :status "); //
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("status", Status.ACTIVE);
 
-        // --- Thêm JOIN và WHERE động ---
-
-        // (PHỨC TẠP) Lọc theo categoryId [cite: 144]
+        // Lọc theo categoryId
         if (request.getCategoryId() != null) {
-            fromClause += "JOIN p.productCategories pc "; // JOIN động
+            // Nối động FROM và WHERE
+            fromClause.append("JOIN p.productCategories pc ");
             whereClause.append("AND pc.category.id = :categoryId AND pc.status = :status ");
             parameters.put("categoryId", request.getCategoryId());
         }
@@ -65,8 +57,25 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
             parameters.put("createdTo", request.getCreatedTo());
         }
 
+        return parameters;
+    }
+
+    @Override
+    public Page<Object[]> searchProducts(ProductSearchReqDTO request, Pageable pageable) {
+
+        // 1. SELECT: 7 cột (id, name, code, price, quantity, createdDate, modifiedDate)
+        String selectClause = "SELECT DISTINCT p.id, p.name, p.productCode, p.price, p.quantity, p.createdDate, p.modifiedDate ";
+
+        // 2. FROM: Chuẩn bị JOIN động
+        String fromClause = "FROM Product p ";
+
+        // 3. WHERE: Xây dựng động
+        StringBuilder whereClause = new StringBuilder("WHERE p.status = :status "); //
+        Map<String, Object> parameters = buildWhereClause(request, new StringBuilder(fromClause), whereClause);
+
+
         // --- QUERY 1: Lấy DỮ LIỆU (Object[]) ---
-        String jpql = selectClause + fromClause + whereClause.toString() + " ORDER BY p.createdDate DESC";
+        String jpql = selectClause + fromClause + whereClause + " ORDER BY p.createdDate DESC";
         Query query = em.createQuery(jpql);
         query.setFirstResult((int) pageable.getOffset());
         query.setMaxResults(pageable.getPageSize());
@@ -82,5 +91,26 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
         Long totalElements = (Long) countQuery.getSingleResult();
 
         return new PageImpl<>(results, pageable, totalElements);
+    }
+
+    @Override
+    public List<Object[]> searchProductsForExport(ProductSearchReqDTO request) {
+
+        // 1. Sửa SELECT: Lấy 7 cột (chưa có Danh mục)
+        String selectClause = "SELECT DISTINCT p.id, p.name, p.productCode, p.price, p.quantity, p.createdDate, p.modifiedDate ";
+
+        StringBuilder fromClause = new StringBuilder("FROM Product p ");
+        StringBuilder whereClause = new StringBuilder("WHERE p.status = :status ");
+
+        // 2. Gọi hàm riêng (Tái sử dụng logic)
+        Map<String, Object> parameters = buildWhereClause(request, fromClause, whereClause);
+
+        // 3. Tạo Query (KHÔNG PHÂN TRANG)
+        String jpql = selectClause + fromClause + whereClause;
+        Query query = em.createQuery(jpql);
+        parameters.forEach(query::setParameter);
+
+        // 4. Trả về List đầy đủ
+        return query.getResultList();
     }
 }

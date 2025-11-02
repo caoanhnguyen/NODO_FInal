@@ -7,7 +7,9 @@ import com.example.nodo_final.dto.response.PageResponse;
 import com.example.nodo_final.dto.response.ResponseData;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Locale;
 
@@ -20,5 +22,7 @@ public interface ProductService {
     void softDelete(Long id, Locale locale);
 
     PageResponse<?> getAllProducts(ProductSearchReqDTO request, Pageable pageable, Locale locale);
+
+    StreamingResponseBody exportProducts(ProductSearchReqDTO request);
 
 }

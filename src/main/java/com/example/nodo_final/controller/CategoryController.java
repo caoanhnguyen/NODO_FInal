@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -86,25 +87,23 @@ public class CategoryController {
     }
 
     @GetMapping("/export")
-    public ResponseEntity<?> exportCategories(
-            @Valid @ModelAttribute CategorySearchReqDTO request //
+    public ResponseEntity<StreamingResponseBody> exportCategories( //
+                                                                   @Valid @ModelAttribute CategorySearchReqDTO request
     ) {
         String filename = "categories.xlsx";
 
-        // 1. Gọi Service
-        ByteArrayInputStream fileData = categoryService.exportCategories(request);
-        InputStreamResource file = new InputStreamResource(fileData);
+        // 1. Gọi Service (Service trả về "dòng chảy")
+        StreamingResponseBody stream = categoryService.exportCategories(request);
 
         // 2. Set Headers
         HttpHeaders headers = new HttpHeaders();
-        // Báo cho trình duyệt biết đây là file .xlsx
         headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-        // Báo cho trình duyệt TẢI VỀ với tên file
         headers.setContentDispositionFormData("attachment", filename);
 
+        // 3. Trả về
         return ResponseEntity.ok()
                 .headers(headers)
-                .body(file);
+                .body(stream);
     }
 
 }
