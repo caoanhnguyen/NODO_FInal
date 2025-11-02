@@ -3,6 +3,7 @@ package com.example.nodo_final.controller;
 import com.example.nodo_final.dto.request.ProductRequestDTO;
 import com.example.nodo_final.dto.request.ProductSearchReqDTO;
 import com.example.nodo_final.dto.request.UpdateProductReqDTO;
+import com.example.nodo_final.dto.response.ProductResponseDTO;
 import com.example.nodo_final.dto.response.ResponseData;
 import com.example.nodo_final.entity.Product;
 import com.example.nodo_final.service.ProductService;
@@ -52,7 +53,13 @@ public class ProductController {
                                          @Valid @ModelAttribute UpdateProductReqDTO dto,
                                          @RequestParam(value = "files", required = false) List<MultipartFile> files,
                                          Locale locale) {
-        return productService.updateProduct(id, dto, files, locale);
+        ProductResponseDTO productResponseDTO = productService.updateProduct(id, dto, files);
+        String message = messageSource.getMessage("product.update.success", null, locale);
+        return ResponseData.builder()
+                .status(HttpStatus.OK.value())
+                .message(message)
+                .data(productResponseDTO)
+                .build();
     }
 
     @DeleteMapping("/{id}")

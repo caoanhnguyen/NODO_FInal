@@ -5,7 +5,6 @@ import com.example.nodo_final.dto.request.ProductSearchReqDTO;
 import com.example.nodo_final.dto.request.UpdateProductReqDTO;
 import com.example.nodo_final.dto.response.PageResponse;
 import com.example.nodo_final.dto.response.ProductResponseDTO;
-import com.example.nodo_final.dto.response.ResponseData;
 import com.example.nodo_final.entity.Category;
 import com.example.nodo_final.entity.Product;
 import com.example.nodo_final.entity.ProductCategory;
@@ -98,21 +97,15 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ResponseData<?> updateProduct(Long id, UpdateProductReqDTO dto, List<MultipartFile> files, Locale locale) {
+    public ProductResponseDTO updateProduct(Long id, UpdateProductReqDTO dto, List<MultipartFile> files) {
 
         // Kiểm tra product có tồn tại không
         Product existingProduct = productRepository.findByIdAndStatus(id, Status.ACTIVE)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        messageSource.getMessage("product.notfound", null, locale)
-                ));
+                .orElseThrow(() -> new ResourceNotFoundException("product.notfound"));
 
         // Kiểm tra product_code trùng
         if(!validateProductCode(dto.getProductCode(), id)) {
-            return ResponseData.builder()
-                    .status(400)
-                    .message(messageSource.getMessage("product.code.duplicate", null, locale))
-                    .data(null)
-                    .build();
+            throw new ResourceNotFoundException("product.code.duplicate");
         }
 
         // Xử lý cập nhật danh sách category
@@ -127,11 +120,7 @@ public class ProductServiceImpl implements ProductService {
         // Lưu thay đổi và trả về
         productRepository.save(existingProduct);
 
-        return ResponseData.builder()
-                .status(200)
-                .message(messageSource.getMessage("product.update.success", null, locale))
-                .data(toDto(existingProduct))
-                .build();
+        return toDto(existingProduct);
     }
 
     @Override
@@ -309,7 +298,9 @@ public class ProductServiceImpl implements ProductService {
 
     // Xử lý cập nhật danh sách category
     private void handleUpdateCategories(Product product, List<Long> newCategoryIds) {
-
+        if (newCategoryIds == null) {
+            return;
+        }
         Set<Long> newIds = Set.copyOf(newCategoryIds);
 
         // Danh sách category hiện tại của product trong DB

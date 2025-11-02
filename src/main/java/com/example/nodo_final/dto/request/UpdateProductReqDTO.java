@@ -29,7 +29,6 @@ public class UpdateProductReqDTO {
     @Min(value = 0, message = "{product.quantity.min}")
     Long quantity;
 
-    @NotEmpty(message = "{product.of.category}")
     List<Long> categoryIds = new ArrayList<>();
 
     List<Long> deletedIds = new ArrayList<>();

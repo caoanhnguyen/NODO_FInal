@@ -4,6 +4,7 @@ import com.example.nodo_final.dto.request.ProductRequestDTO;
 import com.example.nodo_final.dto.request.ProductSearchReqDTO;
 import com.example.nodo_final.dto.request.UpdateProductReqDTO;
 import com.example.nodo_final.dto.response.PageResponse;
+import com.example.nodo_final.dto.response.ProductResponseDTO;
 import com.example.nodo_final.dto.response.ResponseData;
 import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Pageable;
@@ -18,7 +19,7 @@ public interface ProductService {
 
     Long createProduct(ProductRequestDTO dto, List<MultipartFile> files);
 
-    ResponseData<?> updateProduct(Long id, UpdateProductReqDTO dto, List<MultipartFile> files, Locale locale);
+    ProductResponseDTO updateProduct(Long id, UpdateProductReqDTO dto, List<MultipartFile> files);
 
     void softDelete(Long id, Locale locale);
 
