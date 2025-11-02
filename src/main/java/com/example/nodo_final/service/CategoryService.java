@@ -2,25 +2,26 @@ package com.example.nodo_final.service;
 
 import com.example.nodo_final.dto.request.CategoryRequestDTO;
 import com.example.nodo_final.dto.request.CategorySearchReqDTO;
+import com.example.nodo_final.dto.request.UpdateCategoryReqDTO;
+import com.example.nodo_final.dto.response.CategoryDetailResDTO;
 import com.example.nodo_final.dto.response.PageResponse;
-import com.example.nodo_final.dto.response.ResponseData;
+import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Locale;
 
 public interface CategoryService {
 
-    ResponseData<?> createCategory(CategoryRequestDTO dto, List<MultipartFile> files, Locale locale);
+    Long createCategory(CategoryRequestDTO dto, List<MultipartFile> files);
 
-    PageResponse<?> getAllCategories(CategorySearchReqDTO request, Pageable pageable, Locale locale);
+    PageResponse<?> getAllCategories(CategorySearchReqDTO request, Pageable pageable, Locale locale) throws BadRequestException;
 
-    ResponseData<?> updateCategory(Long id, CategoryRequestDTO dto, List<MultipartFile> files, List<Long> deleteIds, Locale locale);
+    CategoryDetailResDTO updateCategory(Long id, UpdateCategoryReqDTO dto, List<MultipartFile> files, List<Long> deleteIds);
 
-    ResponseData<?> softDelete(Long id, Locale locale);
+    void softDelete(Long id, Locale locale);
 
-    StreamingResponseBody exportCategories(CategorySearchReqDTO request);
+    StreamingResponseBody exportCategories(CategorySearchReqDTO request) throws BadRequestException;
 }

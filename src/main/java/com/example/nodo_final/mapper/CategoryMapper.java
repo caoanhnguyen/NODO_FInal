@@ -1,12 +1,13 @@
 package com.example.nodo_final.mapper;
 
 import com.example.nodo_final.dto.request.CategoryRequestDTO;
+import com.example.nodo_final.dto.request.UpdateCategoryReqDTO;
 import com.example.nodo_final.dto.response.CategoryDetailResDTO;
 import com.example.nodo_final.entity.Category;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import com.example.nodo_final.entity.Resource;
+import org.mapstruct.*;
+
+import java.util.List;
 
 @Mapper(componentModel = "spring", uses =  {ResourceMapper.class})
 public interface CategoryMapper {
@@ -14,8 +15,8 @@ public interface CategoryMapper {
     Category toEntity(CategoryRequestDTO dto);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateEntityFromDto(CategoryRequestDTO dto, @MappingTarget Category entity);
+    void updateEntityFromDto(UpdateCategoryReqDTO dto, @MappingTarget Category entity);
 
-
-    CategoryDetailResDTO toDetailDto(Category entity);
+    @Mapping(target = "images", source = "imageList")
+    CategoryDetailResDTO toDetailDto(Category category, List<Resource> imageList);
 }

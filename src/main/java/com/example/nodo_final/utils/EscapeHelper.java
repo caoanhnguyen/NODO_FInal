@@ -6,7 +6,6 @@ public class EscapeHelper {
             return null;
         }
         return param.replace("\\", "\\\\")
-                    .replace("_", "\\_")
-                    .replace("%", "\\%");
+                    .replace("_", "\\_");
     }
 }

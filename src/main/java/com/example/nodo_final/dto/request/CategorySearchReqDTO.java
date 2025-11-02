@@ -1,5 +1,7 @@
 package com.example.nodo_final.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,7 +14,9 @@ import java.util.Date;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CategorySearchReqDTO {
+    @Size(max = 100, message = "{category.name.size}")
     String name;
+    @Size(max = 50, message = "{category.code.size}")
     String categoryCode;
     @DateTimeFormat(pattern = "dd/MM/yyyy")
     Date createdFrom;

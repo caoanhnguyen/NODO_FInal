@@ -12,23 +12,24 @@ import java.util.List;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProductRequestDTO {
-    @NotBlank(message = "Tên sản phẩm không được để trống")
-    @Size(max = 200, message = "Tên sản phẩm không được vượt quá 200 ký tự")
+    @NotBlank(message = "{product.name.notblank}")
+    @Size(max = 200, message = "{product.name.size}")
     String name;
 
-    @NotBlank(message = "Mã sản phẩm không được để trống")
+    @NotBlank(message = "{product.code.notblank}")
+    @Size(max = 50, message = "{product.code.size}")
     String productCode;
 
     String description;
 
-    @NotNull(message = "Giá không được để trống")
-    @Min(value = 0, message = "Giá phải lớn hơn hoặc bằng 0")
+    @NotNull(message = "{product.price.notnull}")
+    @Min(value = 0, message = "{product.price.min}")
     Double price;
 
-    @NotNull(message = "Số lượng không được để trống")
-    @Min(value = 0, message = "Số lượng phải lớn hơn hoặc bằng 0")
+    @NotNull(message = "{product.quantity.notnull}")
+    @Min(value = 0, message = "{product.quantity.min}")
     Long quantity;
 
-    @NotEmpty(message = "Sản phẩm phải thuộc ít nhất một loại") //
+    @NotEmpty(message = "{product.of.category}")
     List<Long> categoryIds;
 }

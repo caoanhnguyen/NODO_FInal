@@ -15,9 +15,9 @@ import java.util.Date;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProductSearchReqDTO {
-    @Size(max = 200, message = "Tên sản phẩm không được vượt quá 200 ký tự")
+    @Size(max = 200, message = "{product.name.size}")
     String name;
-
+    @Size(max = 50, message = "{product.code.size}")
     String productCode;
 
     @DateTimeFormat(pattern = "dd/MM/yyyy")
@@ -26,5 +26,6 @@ public class ProductSearchReqDTO {
     @DateTimeFormat(pattern = "dd/MM/yyyy")
     Date createdTo;
 
+    @Min(value = 0, message = "{common.id.positive}")
     Long categoryId;
 }

@@ -4,6 +4,8 @@ import com.example.nodo_final.dto.response.ResourceResponseDTO;
 import com.example.nodo_final.entity.Product;
 import com.example.nodo_final.entity.Resource;
 import com.example.nodo_final.enums.Status;
+import org.springframework.data.domain.Limit;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,4 +35,6 @@ public interface ResourceRepository extends JpaRepository<Resource, Long> {
     List<Resource> findByCategory_IdInAndStatus(Collection<Long> categoryIds, Status status);
 
     List<Resource> findByProduct_IdInAndStatus(Collection<Long> productIds, Status status);
+
+    List<Resource> findByCategoryIdAndStatus(Long categoryId, Status status);
 }

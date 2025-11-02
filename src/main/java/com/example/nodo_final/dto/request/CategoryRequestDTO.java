@@ -12,15 +12,15 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CategoryRequestDTO {
-    @NotBlank(message = "Tên không được để trống")
-    @Size(max = 100, message = "Tên không được vượt quá 100 ký tự")
+    @NotBlank(message = "{category.name.notblank}")
+    @Size(max = 100, message = "{category.name.size}")
     String name;
 
-    @NotBlank(message = "Mã loại không được để trống")
-    @Size(max = 50, message = "Mã loại không được vượt quá 50 ký tự")
+    @NotBlank(message = "{category.code.notblank}")
+    @Size(max = 50, message = "{category.code.size}")
     @JsonProperty("category_code")
     String categoryCode;
 
-    @Size(max = 200, message = "Mô tả không được vượt quá 200 ký tự")
+    @Size(max = 200, message = "{category.description.size}")
     String description;
 }
